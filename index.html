@@ -977,6 +977,22 @@
 
     </main>
 
+    <!-- INSTALL APP MODAL PROMPT -->
+    <div id="installModal" class="modal-overlay hidden">
+        <div class="modal-box" style="text-align: center;">
+            <div class="modal-top">
+                <span class="modal-title">Install App</span>
+                <button id="btnCloseInstall" class="btn-close-modal">✕</button>
+            </div>
+            <div style="font-size: 0.8125rem; color: #d4d4d8; padding: 0.5rem 0; line-height: 1.4;">
+                Install <b>LOCKIN</b> on your home screen for quick access and full offline experience.
+            </div>
+            <button id="btnTriggerInstall" class="btn-restart" style="background-color: #ef4444; color: #ffffff; margin-top: 0.25rem;">
+                Install Now
+            </button>
+        </div>
+    </div>
+
     <!-- PREMIUM HIDDEN SHARE CARD TEMPLATE -->
     <div id="shareCard" class="share-card-container">
         <div class="card-ambient-glow"></div>
@@ -1034,6 +1050,43 @@
                     .catch(err => console.log('SW registration failed', err));
             });
         }
+
+        // Custom PWA Install Prompt Logic
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check if already running in standalone PWA mode
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+            if (!isStandalone) {
+                setTimeout(() => {
+                    if (deferredPrompt) {
+                        document.getElementById('installModal').classList.remove('hidden');
+                    }
+                }, 5000);
+            }
+        });
+
+        document.getElementById('btnTriggerInstall').onclick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                }
+                deferredPrompt = null;
+                document.getElementById('installModal').classList.add('hidden');
+            }
+        };
+
+        document.getElementById('btnCloseInstall').onclick = () => {
+            playSound('click');
+            document.getElementById('installModal').classList.add('hidden');
+        };
 
         const playSound = (type) => {
             try {

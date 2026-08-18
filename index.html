@@ -945,7 +945,7 @@
                     <div onclick="copyToClipboard('01700000000', 'bKash Number Copied!')" class="payment-card bkash">
                         <div>
                             <div class="pay-provider">bKash (Personal)</div>
-                            <div class="pay-number bkash">01700-000000</div>
+                            <div class="pay-number bkash">01956988775</div>
                         </div>
                         <span class="copy-pill">Copy</span>
                     </div>
@@ -954,7 +954,7 @@
                     <div onclick="copyToClipboard('01800000000', 'Nagad Number Copied!')" class="payment-card nagad">
                         <div>
                             <div class="pay-provider">Nagad (Personal)</div>
-                            <div class="pay-number nagad">01800-000000</div>
+                            <div class="pay-number nagad">01956988775</div>
                         </div>
                         <span class="copy-pill">Copy</span>
                     </div>
@@ -963,7 +963,7 @@
                     <div onclick="copyToClipboard('019000000000', 'Rocket Number Copied!')" class="payment-card rocket">
                         <div>
                             <div class="pay-provider">Rocket (Personal)</div>
-                            <div class="pay-number rocket">01900-000000-0</div>
+                            <div class="pay-number rocket">01956988775</div>
                         </div>
                         <span class="copy-pill">Copy</span>
                     </div>
@@ -1018,7 +1018,7 @@
             </div>
             <div class="share-card-box">
                 <span class="share-card-label">Total Lost</span>
-                <span id="cardTotalLost" class="share-card-value">$0</span>
+                <span id="cardTotalLost" class="share-card-value">0</span>
             </div>
             <div class="share-card-box">
                 <span class="share-card-label">Completed</span>
@@ -1037,9 +1037,7 @@
         Card Image Generated & Saved!
     </div>
 
-    <footer>
-        Local Storage Secured
-    </footer>
+
 
     <script>
         // Register Service Worker for PWA
@@ -1172,7 +1170,7 @@
                     timerGrid.classList.add('visibility-hidden');
                     btnContainer.innerHTML = `
                         <button id="btnPayMe" class="btn-payme">
-                            Pay Me ($${s.penalty})
+                            Pay Me (${s.penalty})
                         </button>
                         <button id="btnRestart" class="btn-restart">
                             Don't Give Up • Start Again

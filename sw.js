@@ -1,17 +1,18 @@
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open('lockin-pwa-v1').then((cache) => {
-      return cache.addAll([
-        './index.html'
-      ]);
-    })
-  );
+    e.waitUntil(
+        caches.open('lockin-v1').then((cache) => {
+            return cache.addAll([
+                './index.html',
+                './manifest.json'
+            ]);
+        })
+    );
 });
 
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    })
-  );
+    e.respondWith(
+        caches.match(e.request).then((response) => {
+            return response || fetch(e.request);
+        })
+    );
 });

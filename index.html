@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LOCKIN | Discipline</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LOCKIN">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- html2canvas for generating clean image cards -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; /* Removes mobile blue tap/focus highlight */
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1.5rem;
+            user-select: none;
+            perspective: 1200px;
+            overflow-x: hidden;
+        }
+
+        /* Prevent all button/link focus and active state blue background rings */
+        button, a, input, div {
+            outline: none !important;
+        }
+        button:focus, button:active,
+        a:focus, a:active,
+        .btn-abort:focus, .btn-abort:active,
+        .btn-payme:focus, .btn-payme:active,
+        .btn-restart:focus, .btn-restart:active,
+        .btn-init:focus, .btn-init:active,
+        .btn-back:focus, .btn-back:active,
+        .btn-stats:focus, .btn-stats:active,
+        .btn-share:focus, .btn-share:active,
+        .payment-card:focus, .payment-card:active {
+            background-color: inherit;
+        }
+
+        .hidden { display: none !important; }
+        .visibility-hidden { display: none !important; pointer-events: none !important; }
+
+        /* Header */
+        header {
+            width: 100%;
+            max-width: 24rem;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #18181b;
+        }
+
+        .brand-title {
+            font-size: 1rem;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            color: #ef4444;
+            text-transform: uppercase;
+        }
+
+        .brand-title span { color: #ffffff; }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-stats {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #a1a1aa;
+            background-color: #18181b;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid #27272a;
+            cursor: pointer;
+            transition: border-color 0.15s ease-in-out;
+        }
+        .btn-stats:hover { border-color: #3f3f46; }
+
+        .loss-badge {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #a1a1aa;
+            background-color: #18181b;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid #27272a;
+        }
+
+        .loss-badge span {
+            color: #f87171;
+            font-weight: 700;
+        }
+
+        /* Container */
+        main {
+            width: 100%;
+            max-width: 24rem;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            flex: 1 1 0%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-2-5 > * + * { margin-top: 0.625rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+            margin-top:-120px;
+        }
+
+        .day-indicator {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: #f87171;
+            font-weight: 700;
+            text-align: left;
+            margin-bottom: 0.25rem;
+        }
+
+        .contract-status {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: #71717a;
+            text-align: left;
+        }
+
+        .btn-share {
+            background-color: #18181b;
+            border: 1px solid #27272a;
+            padding: 0.625rem;
+            border-radius: 0.75rem;
+            color: #d4d4d8;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .btn-share:hover {
+            color: #ffffff;
+            border-color: #3f3f46;
+        }
+        .btn-share svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* 3D Flip Card Animation & Styles */
+        .glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+        @keyframes glowPulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(239, 68, 68, 0.2), 0 0 40px rgba(239, 68, 68, 0.1); transform: scale(1); }
+            50% { text-shadow: 0 0 35px rgba(239, 68, 68, 0.5), 0 0 70px rgba(239, 68, 68, 0.2); transform: scale(1.02); }
+        }
+
+        .float-anim { animation: floatChar 4s ease-in-out infinite; }
+        @keyframes floatChar {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+
+        .scanline {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.3));
+            background-size: 100% 4px;
+            position: absolute;
+            inset: 0;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .flip-card-wrapper {
+            perspective: 1000px;
+            width: 144px;
+            height: 144px;
+            margin: 0 auto;
+            margin-top:50px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            top: 0;
+            left: 0;
+        }
+
+        .flip-card-front {
+            width: 9rem;
+            height: 9rem;
+            background-color: rgba(24, 24, 27, 0.4);
+            border: 1px solid rgba(39, 39, 42, 0.8);
+            border-radius: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .flip-card-back {
+            width: 9rem;
+            height: 9rem;
+            background-color: rgba(24, 24, 27, 0.8);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 0.75rem;
+            border-radius: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            position: relative;
+            transform: rotateY(180deg);
+        }
+
+        .eyes-box {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .eye {
+            width: 0.875rem;
+            height: 1.25rem;
+            background-color: #ef4444;
+            border-radius: 9999px;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+
+        .mouth-normal {
+            width: 2rem;
+            height: 0.25rem;
+            background-color: #52525b;
+            border-radius: 9999px;
+            margin-bottom: 0.5rem;
+        }
+
+        .char-status {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #71717a;
+            font-family: monospace, monospace;
+        }
+
+        .cross-eye {
+            width: 0.875rem;
+            height: 0.875rem;
+            background-color: #ef4444;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 700;
+            color: #000000;
+        }
+
+        .sad-mouth {
+            width: 1.5rem;
+            height: 0.5rem;
+            border-bottom: 2px solid #ef4444;
+            border-radius: 9999px;
+            margin-bottom: 0.5rem;
+        }
+
+        .motivation-text {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            color: #f87171;
+            font-family: monospace, monospace;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.3; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        .anim-text { animation: fadeInOut 2.5s ease-in-out infinite; }
+
+        /* Timer Split Grid */
+        .timer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.5rem;
+            background-color: rgba(24, 24, 27, 0.3);
+            border: 1px solid rgba(39, 39, 42, 0.6);
+            padding: 1rem;
+            border-radius: 1.5rem;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .timer-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timer-value {
+            font-size: 1.5rem;
+            line-height: 2rem;
+            font-weight: 900;
+            letter-spacing: -0.025em;
+            color: #ffffff;
+            font-family: monospace, monospace;
+        }
+
+        .timer-value.secs { color: #ef4444; }
+
+        .timer-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #71717a;
+            margin-top: 0.25rem;
+        }
+
+        /* Action Buttons */
+        .btn-abort {
+            width: 100%;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            border: 1px solid #27272a;
+            border-radius: 1rem;
+            background: transparent;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-abort:hover {
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+            background: transparent;
+        }
+
+        .btn-payme {
+            width: 100%;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            background-color: #dc2626;
+            color: #ffffff;
+            font-weight: 700;
+            border-radius: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+        }
+        .btn-payme:hover { background-color: #ef4444; }
+
+        .btn-restart {
+            width: 100%;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: 700;
+            border-radius: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-restart:hover { background-color: #e4e4e7; }
+
+        /* Setup View */
+        .setup-heading {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 3rem;
+            letter-spacing: -0.025em;
+        }
+
+        .penalty-input {
+            width: 100%;
+            background-color: transparent;
+            border: none;
+            border-bottom: 1px solid #27272a;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.25rem;
+            color: #ffffff;
+            outline: none;
+            margin-bottom: 2rem;
+            transition: border-color 0.15s ease-in-out;
+        }
+        .penalty-input:focus { border-color: #ef4444; }
+
+        .btn-init {
+            width: 100%;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: 700;
+            border-radius: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.875rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-init:hover { background-color: #e4e4e7; }
+
+        /* Stats View */
+        .stats-heading {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: -0.025em;
+        }
+
+        .stat-card {
+            background-color: rgba(24, 24, 27, 0.6);
+            border: 1px solid rgba(39, 39, 42, 0.8);
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #71717a;
+            font-weight: 700;
+        }
+
+        .stat-value-red {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f87171;
+        }
+
+        .stat-value-white {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .btn-back {
+            width: 100%;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            background-color: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 1rem;
+            color: #d4d4d8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        .btn-back:hover { border-color: #3f3f46; background-color: #18181b; }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            z-index: 50;
+            text-align: center;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 20rem;
+            background-color: rgba(24, 24, 27, 0.9);
+            border: 1px solid #27272a;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #27272a;
+            padding-bottom: 0.75rem;
+        }
+
+        .modal-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #f87171;
+        }
+
+        .btn-close-modal {
+            color: #71717a;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-close-modal:hover { color: #ffffff; background: transparent; }
+
+        .payment-card {
+            background-color: #09090b;
+            border: 1px solid #27272a;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+        .payment-card.bkash:hover { border-color: rgba(236, 72, 153, 0.5); background-color: #09090b; }
+        .payment-card.nagad:hover { border-color: rgba(249, 115, 22, 0.5); background-color: #09090b; }
+        .payment-card.rocket:hover { border-color: rgba(168, 85, 247, 0.5); background-color: #09090b; }
+
+        .pay-provider {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #71717a;
+            font-weight: 700;
+        }
+
+        .pay-number {
+            font-size: 0.75rem;
+            font-family: monospace, monospace;
+            font-weight: 700;
+            margin-top: 0.125rem;
+        }
+        .pay-number.bkash { color: #f472b6; }
+        .pay-number.nagad { color: #fb923c; }
+        .pay-number.rocket { color: #c084fc; }
+
+        .copy-pill {
+            font-size: 9px;
+            background-color: #18181b;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .modal-footnote {
+            padding-top: 0.5rem;
+            font-size: 9px;
+            color: #71717a;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: center;
+        }
+
+        /* Share Card Template (Hidden) */
+        .share-card-container {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            width: 440px;
+            background-color: #0c0c0c;
+            border: 1px solid rgba(39, 39, 42, 0.8);
+            border-radius: 32px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: left;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card-ambient-glow {
+            position: absolute;
+            top: -6rem;
+            right: -6rem;
+            width: 12rem;
+            height: 12rem;
+            background-color: rgba(239, 68, 68, 0.1);
+            border-radius: 9999px;
+            filter: blur(64px);
+            pointer-events: none;
+        }
+
+        .share-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .share-card-brand {
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            color: #ef4444;
+            text-transform: uppercase;
+        }
+        .share-card-brand span { color: #ffffff; }
+
+        .share-card-sub {
+            font-size: 9px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #71717a;
+            font-family: monospace, monospace;
+            margin-top: 0.125rem;
+        }
+
+        .share-card-badge {
+            color: #d4d4d8;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 0.375rem 0.875rem;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-family: monospace, monospace;
+        }
+
+        .share-card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .share-card-box {
+            background-color: rgba(24, 24, 27, 0.4);
+            border: 1px solid rgba(39, 39, 42, 0.6);
+            padding: 1rem;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .share-card-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #71717a;
+            margin-bottom: 0.25rem;
+        }
+
+        .share-card-value {
+            font-size: 1.125rem;
+            font-weight: 900;
+            letter-spacing: -0.025em;
+            color: #ffffff;
+            font-family: monospace, monospace;
+        }
+        .share-card-value.red { color: #f87171; }
+
+        .share-card-bottom {
+            padding-top: 1rem;
+            border-top: 1px solid #18181b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .share-card-tags {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #52525b;
+            font-family: monospace, monospace;
+        }
+
+        .share-card-domain {
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #ef4444;
+            font-weight: 700;
+        }
+
+        /* Toast Popup */
+        .toast-notification {
+            position: fixed;
+            bottom: 4rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #27272a;
+            color: #ffffff;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 50;
+            border: 1px solid #3f3f46;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            max-width: 24rem;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #3f3f46;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1 class="brand-title">LOCK<span>IN</span></h1>
+        <div class="header-controls">
+            <button id="btnOpenStats" class="btn-stats">Stats</button>
+            <div class="loss-badge">
+                Lost: <span id="headerTotalLoss">$0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Container -->
+    <main>
+        
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="hidden space-y-6">
+            <div class="dashboard-header">
+                <div>
+                    <div id="dayIndicator" class="day-indicator">Tier 1 • Day 1 of 10</div>
+                    <div class="contract-status">Contract Active</div>
+                </div>
+                <!-- Share Performance Button -->
+                <button id="btnShare" class="btn-share" title="Share Performance Card">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684m0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                </button>
+            </div>
+            
+            <!-- 3D FLIP CONTAINER FOR CHARACTER -->
+            <div class="flip-card-wrapper">
+                <div id="flipCardInner" class="flip-card-inner float-anim">
+                    
+                    <!-- FRONT: Normal Animated Character / Mascot Box -->
+                    <div class="flip-card-front">
+                        <div class="scanline"></div>
+                        <div class="eyes-box">
+                            <div id="charLeftEye" class="eye"></div>
+                            <div id="charRightEye" class="eye"></div>
+                        </div>
+                        <div id="charMouth" class="mouth-normal"></div>
+                        <span id="charStatusText" class="char-status">STABLE</span>
+                    </div>
+
+                    <!-- BACK: Sad Reaction + Motivating Text Box -->
+                    <div class="flip-card-back">
+                        <div class="scanline"></div>
+                        <div class="eyes-box" style="margin-bottom: 0.5rem;">
+                            <div class="cross-eye">✕</div>
+                            <div class="cross-eye">✕</div>
+                        </div>
+                        <!-- Sad Mouth Arc -->
+                        <div class="sad-mouth"></div>
+                        <!-- Dynamic Motivating Text -->
+                        <div id="motivationText" class="motivation-text anim-text">STAY HARD</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modern Split Timer Grid -->
+            <div id="timerGrid" class="timer-grid glow-pulse">
+                <div class="timer-unit">
+                    <span id="timerDays" class="timer-value">00</span>
+                    <span class="timer-label">Days</span>
+                </div>
+                <div class="timer-unit">
+                    <span id="timerHours" class="timer-value">00</span>
+                    <span class="timer-label">Hours</span>
+                </div>
+                <div class="timer-unit">
+                    <span id="timerMins" class="timer-value">00</span>
+                    <span class="timer-label">Mins</span>
+                </div>
+                <div class="timer-unit">
+                    <span id="timerSecs" class="timer-value secs">00</span>
+                    <span class="timer-label">Secs</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Action Buttons Container -->
+            <div id="actionButtonsContainer" class="space-y-2">
+                <button id="btnAction" class="btn-abort">
+                    Abort Contract
+                </button>
+            </div>
+        </div>
+
+        <!-- Setup View -->
+        <div id="setupView" class="hidden">
+            <h1 id="setupTitle" class="setup-heading">SET TERMS</h1>
+            <input id="penalty" type="number" placeholder="PENALTY AMOUNT ($)" class="penalty-input">
+            <button id="startBtn" class="btn-init">Initialize</button>
+        </div>
+
+        <!-- Stats View -->
+        <div id="statsView" class="hidden space-y-6">
+            <h2 class="stats-heading">STATISTICS</h2>
+            
+            <div class="space-y-3">
+                <div class="stat-card">
+                    <span class="stat-label">Total Money Lost</span>
+                    <span id="statTotalLost" class="stat-value-red">$0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total Relapses</span>
+                    <span id="statTotalRelapses" class="stat-value-white">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Completed Tiers</span>
+                    <span id="statCompleted" class="stat-value-white">0</span>
+                </div>
+            </div>
+
+            <button id="btnCloseStats" class="btn-back">
+                Back
+            </button>
+        </div>
+
+        <!-- PAYMENT ACCOUNTS MODAL -->
+        <div id="paymentModal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <div class="modal-top">
+                    <span class="modal-title">Payment Accounts</span>
+                    <button id="btnClosePayModal" class="btn-close-modal">✕</button>
+                </div>
+                
+                <div class="space-y-2-5" style="text-align: left;">
+                    <!-- bKash -->
+                    <div onclick="copyToClipboard('01700000000', 'bKash Number Copied!')" class="payment-card bkash">
+                        <div>
+                            <div class="pay-provider">bKash (Personal)</div>
+                            <div class="pay-number bkash">01700-000000</div>
+                        </div>
+                        <span class="copy-pill">Copy</span>
+                    </div>
+
+                    <!-- Nagad -->
+                    <div onclick="copyToClipboard('01800000000', 'Nagad Number Copied!')" class="payment-card nagad">
+                        <div>
+                            <div class="pay-provider">Nagad (Personal)</div>
+                            <div class="pay-number nagad">01800-000000</div>
+                        </div>
+                        <span class="copy-pill">Copy</span>
+                    </div>
+
+                    <!-- Rocket -->
+                    <div onclick="copyToClipboard('019000000000', 'Rocket Number Copied!')" class="payment-card rocket">
+                        <div>
+                            <div class="pay-provider">Rocket (Personal)</div>
+                            <div class="pay-number rocket">01900-000000-0</div>
+                        </div>
+                        <span class="copy-pill">Copy</span>
+                    </div>
+                </div>
+
+                <div class="modal-footnote">
+                    Click any card to copy account number
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- PREMIUM HIDDEN SHARE CARD TEMPLATE -->
+    <div id="shareCard" class="share-card-container">
+        <div class="card-ambient-glow"></div>
+
+        <div class="share-card-top">
+            <div>
+                <h2 class="share-card-brand">LOCK<span>IN</span></h2>
+                <p class="share-card-sub">Discipline Protocol</p>
+            </div>
+            <div id="cardTierBadge" class="share-card-badge">
+                Tier 1
+            </div>
+        </div>
+
+        <div class="share-card-grid">
+            <div class="share-card-box">
+                <span class="share-card-label">Progress</span>
+                <span id="cardProgress" class="share-card-value">Day 1 / 10</span>
+            </div>
+            <div class="share-card-box">
+                <span class="share-card-label">Relapses</span>
+                <span id="cardRelapses" class="share-card-value red">0</span>
+            </div>
+            <div class="share-card-box">
+                <span class="share-card-label">Total Lost</span>
+                <span id="cardTotalLost" class="share-card-value">$0</span>
+            </div>
+            <div class="share-card-box">
+                <span class="share-card-label">Completed</span>
+                <span id="cardCompleted" class="share-card-value">0 Tiers</span>
+            </div>
+        </div>
+
+        <div class="share-card-bottom">
+            <span class="share-card-tags">#Lockin #Discipline</span>
+            <span id="shareCardDomain" class="share-card-domain">lockin.app</span>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-notification">
+        Card Image Generated & Saved!
+    </div>
+
+    <footer>
+        Local Storage Secured
+    </footer>
+
+    <script>
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registered!', reg))
+                    .catch(err => console.log('SW registration failed', err));
+            });
+        }
+
+        const playSound = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = type === 'click' ? 400 : 200;
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+                osc.start(); osc.stop(ctx.currentTime + 0.5);
+            } catch(e) {}
+        };
+
+        const STORAGE_KEY = "lockin_v10_tier";
+        const TOTAL_DURATION_MS = 10 * 24 * 60 * 60 * 1000;
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        const motivations = ["STAY HARD", "NO EXCUSES", "WAKE UP", "PUSH FORWARD", "DISCIPLINE WINS", "GET FOCUSED"];
+        let motIndex = 0;
+        setInterval(() => {
+            motIndex = (motIndex + 1) % motivations.length;
+            const el = document.getElementById('motivationText');
+            if(el) el.textContent = motivations[motIndex];
+        }, 3000);
+
+        function getState() {
+            const def = {
+                active: false,
+                start: null,
+                penalty: 50,
+                tier: 1,
+                totalLost: 0,
+                totalRelapses: 0,
+                completedTiers: 0,
+                inAbortModal: false
+            };
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : def;
+        }
+
+        function saveState(s) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+            render();
+        }
+
+        let currentView = 'main';
+
+        function render() {
+            const s = getState();
+            document.getElementById('headerTotalLoss').textContent = `$${s.totalLost}`;
+            
+            document.getElementById('setupView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('statsView').classList.add('hidden');
+            document.getElementById('paymentModal').classList.add('hidden');
+
+            if (currentView === 'stats') {
+                document.getElementById('statsView').classList.remove('hidden');
+                document.getElementById('statTotalLost').textContent = `$${s.totalLost}`;
+                document.getElementById('statTotalRelapses').textContent = s.totalRelapses;
+                document.getElementById('statCompleted').textContent = s.completedTiers;
+                return;
+            }
+
+            if (!s.active) {
+                document.getElementById('setupView').classList.remove('hidden');
+            } else {
+                document.getElementById('dashboardView').classList.remove('hidden');
+                
+                const elapsed = Date.now() - s.start;
+                let currentDay = Math.floor(elapsed / DAY_MS) + 1;
+                if (currentDay > 10) currentDay = 10;
+                
+                document.getElementById('dayIndicator').textContent = `Tier ${s.tier} • Day ${currentDay} of 10`;
+
+                const flipInner = document.getElementById('flipCardInner');
+                const btnContainer = document.getElementById('actionButtonsContainer');
+                const timerGrid = document.getElementById('timerGrid');
+
+                if (s.inAbortModal) {
+                    flipInner.classList.add('is-flipped');
+                    timerGrid.classList.add('visibility-hidden');
+                    btnContainer.innerHTML = `
+                        <button id="btnPayMe" class="btn-payme">
+                            Pay Me ($${s.penalty})
+                        </button>
+                        <button id="btnRestart" class="btn-restart">
+                            Don't Give Up • Start Again
+                        </button>
+                    `;
+                    document.getElementById('btnPayMe').onclick = () => {
+                        playSound('click');
+                        document.getElementById('paymentModal').classList.remove('hidden');
+                    };
+                    document.getElementById('btnRestart').onclick = () => {
+                        playSound('click');
+                        s.totalLost += s.penalty;
+                        s.totalRelapses += 1;
+                        s.active = true;
+                        s.start = Date.now();
+                        s.inAbortModal = false;
+                        saveState(s);
+                    };
+                } else {
+                    flipInner.classList.remove('is-flipped');
+                    timerGrid.classList.remove('visibility-hidden');
+                    btnContainer.innerHTML = `
+                        <button id="btnGiveUp" class="btn-abort">
+                            Abort Contract
+                        </button>
+                    `;
+                    document.getElementById('btnGiveUp').onclick = () => {
+                        playSound('abort');
+                        s.inAbortModal = true;
+                        saveState(s);
+                    };
+                }
+            }
+        }
+
+        document.getElementById('startBtn').onclick = () => {
+            const amt = parseFloat(document.getElementById('penalty').value);
+            if(!amt) return;
+            const s = getState();
+            saveState({
+                ...s,
+                active: true,
+                start: Date.now(),
+                penalty: amt,
+                inAbortModal: false
+            });
+            playSound('click');
+        };
+
+        document.getElementById('btnClosePayModal').onclick = () => {
+            playSound('click');
+            document.getElementById('paymentModal').classList.add('hidden');
+        };
+
+        function copyToClipboard(text, msg) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.style.opacity = '1';
+                setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+            });
+        }
+
+        document.getElementById('btnOpenStats').onclick = () => {
+            playSound('click');
+            currentView = 'stats';
+            render();
+        };
+
+        document.getElementById('btnCloseStats').onclick = () => {
+            playSound('click');
+            currentView = 'main';
+            render();
+        };
+
+        // Premium Card Visual Share Feature with Auto Live Link
+        document.getElementById('btnShare').onclick = async () => {
+            playSound('click');
+            const s = getState();
+            const elapsed = Date.now() - s.start;
+            let currentDay = Math.min(Math.floor(elapsed / DAY_MS) + 1, 10);
+            
+            document.getElementById('cardTierBadge').textContent = `Tier ${s.tier}`;
+            document.getElementById('cardProgress').textContent = `Day ${currentDay} / 10`;
+            document.getElementById('cardRelapses').textContent = s.totalRelapses;
+            document.getElementById('cardTotalLost').textContent = `$${s.totalLost}`;
+            document.getElementById('cardCompleted').textContent = `${s.completedTiers} Tiers`;
+
+            const currentDomain = window.location.host || "lockin.app";
+            document.getElementById('shareCardDomain').textContent = currentDomain;
+
+            const cardElement = document.getElementById('shareCard');
+
+            try {
+                const canvas = await html2canvas(cardElement, {
+                    backgroundColor: '#0a0a0a',
+                    scale: 2,
+                    useCORS: true
+                });
+
+                canvas.toBlob(async blob => {
+                    const file = new File([blob], "lockin-discipline-card.png", { type: "image/png" });
+                    const shareData = {
+                        files: [file],
+                        title: 'LOCKIN Performance Card',
+                        text: `My current discipline progress on LOCKIN! Check it out:`,
+                        url: window.location.href
+                    };
+                    
+                    if (navigator.canShare && navigator.canShare(shareData)) {
+                        try {
+                            await navigator.share(shareData);
+                        } catch (err) {}
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = 'lockin-progress.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        
+                        copyToClipboard(window.location.href, 'Card Downloaded & Link Copied!');
+                    }
+                }, 'image/png');
+            } catch (err) {
+                console.error("Card generation failed", err);
+            }
+        };
+
+        setInterval(() => {
+            const s = getState();
+            if (!s.active || s.inAbortModal || currentView === 'stats') return;
+            
+            const elapsed = Date.now() - s.start;
+            const remaining = TOTAL_DURATION_MS - elapsed;
+
+            if (remaining <= 0) {
+                alert(`Tier ${s.tier} Completed Successfully! Moving to Tier ${s.tier + 1}`);
+                s.completedTiers += 1;
+                s.tier += 1;
+                s.start = Date.now();
+                saveState(s);
+                return;
+            }
+            
+            let currentDay = Math.floor(elapsed / DAY_MS) + 1;
+            if (currentDay > 10) currentDay = 10;
+            document.getElementById('dayIndicator').textContent = `Tier ${s.tier} • Day ${currentDay} of 10`;
+
+            const daysLeft = Math.floor(remaining / (24 * 3600000));
+            const h = Math.floor((remaining % (24 * 3600000)) / 3600000);
+            const m = Math.floor((remaining % 3600000) / 60000);
+            const sec = Math.floor((remaining % 60000) / 1000);
+
+            document.getElementById('timerDays').textContent = daysLeft.toString().padStart(2, '0');
+            document.getElementById('timerHours').textContent = h.toString().padStart(2, '0');
+            document.getElementById('timerMins').textContent = m.toString().padStart(2, '0');
+            document.getElementById('timerSecs').textContent = sec.toString().padStart(2, '0');
+
+            const mouth = document.getElementById('charMouth');
+            const statusTxt = document.getElementById('charStatusText');
+            if (sec % 2 === 0) {
+                mouth.style.width = '10px';
+                mouth.style.background = '#ef4444';
+                statusTxt.textContent = 'KEEP';
+            } else {
+                mouth.style.width = '14px';
+                mouth.style.background = '#ffffff';
+                statusTxt.textContent = 'GOING';
+            }
+        }, 1000);
+
+        render();
+    </script>
+</body>
+</html>

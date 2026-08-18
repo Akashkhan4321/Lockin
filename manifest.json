@@ -1,0 +1,16 @@
+{
+  "name": "LOCKIN Discipline",
+  "short_name": "LOCKIN",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/512x512/0a0a0a/ef4444?text=L",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+v

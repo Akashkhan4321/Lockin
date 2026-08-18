@@ -821,7 +821,7 @@
         <div class="header-controls">
             <button id="btnOpenStats" class="btn-stats">Stats</button>
             <div class="loss-badge">
-                Lost: <span id="headerTotalLoss">$0</span>
+                Lost: <span id="headerTotalLoss">0</span>
             </div>
         </div>
     </header>
@@ -904,7 +904,7 @@
         <!-- Setup View -->
         <div id="setupView" class="hidden">
             <h1 id="setupTitle" class="setup-heading">SET TERMS</h1>
-            <input id="penalty" type="number" placeholder="PENALTY AMOUNT ($)" class="penalty-input">
+            <input id="penalty" type="number" placeholder="PENALTY AMOUNT" class="penalty-input">
             <button id="startBtn" class="btn-init">Initialize</button>
         </div>
 
@@ -1137,7 +1137,7 @@
 
         function render() {
             const s = getState();
-            document.getElementById('headerTotalLoss').textContent = `$${s.totalLost}`;
+            document.getElementById('headerTotalLoss').textContent = `${s.totalLost}`;
             
             document.getElementById('setupView').classList.add('hidden');
             document.getElementById('dashboardView').classList.add('hidden');
@@ -1146,7 +1146,7 @@
 
             if (currentView === 'stats') {
                 document.getElementById('statsView').classList.remove('hidden');
-                document.getElementById('statTotalLost').textContent = `$${s.totalLost}`;
+                document.getElementById('statTotalLost').textContent = `${s.totalLost}`;
                 document.getElementById('statTotalRelapses').textContent = s.totalRelapses;
                 document.getElementById('statCompleted').textContent = s.completedTiers;
                 return;
